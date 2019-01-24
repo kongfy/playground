@@ -21,7 +21,8 @@ public:
   {
     node->locked = true;
 
-    qnode *prev = __sync_lock_test_and_set(&lock_, node);
+    qnode *prev = node->p_qnode = __sync_lock_test_and_set(&lock_, node);
+
     while (prev->locked) {
       asm volatile("pause\n" ::: "memory");
     }

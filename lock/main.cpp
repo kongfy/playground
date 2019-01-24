@@ -11,6 +11,7 @@
 #include "arraylock.h"
 #include "clhlock.h"
 #include "mcslock.h"
+#include "bakerylock.h"
 
 using namespace std;
 
@@ -18,18 +19,26 @@ static int64_t counter    = 0;
 static int64_t n          = 0;
 static int64_t loop_count = 0;
 
-static MutexLock mutex_lock;
-static TASLock   tas_lock;
-static TiketLock tiket_lock;
-static ArrayLock array_lock;
-static CLHLock   clh_lock;
-static MCSLock   mcs_lock;
+static MutexLock  mutex_lock;
+static TASLock    tas_lock;
+static TiketLock  tiket_lock;
+static ArrayLock  array_lock;
+static CLHLock    clh_lock;
+static MCSLock    mcs_lock;
+static BakeryLock bakery_lock;
 
 struct param
 {
   void *lock;
   int64_t tid;
 };
+
+void adder_atomic(param *args)
+{
+  for (int64_t i = 0; i < loop_count; ++i) {
+    __sync_fetch_and_add(&counter, 1);
+  }
+}
 
 void adder(param *args)
 {
@@ -59,6 +68,14 @@ void adder_listlock(param *args)
   }
 }
 
+void adder_bakerylock(param *args)
+{
+  for (int64_t i = 0; i < loop_count; ++i) {
+    BakeryLockGuard guard(*(BakeryLock*)args->lock, args->tid);
+    counter += 1;
+  }
+}
+
 int main(int argc, char *argv[])
 {
   pthread_t threads[MAX_THREAD_NUM];
@@ -76,7 +93,7 @@ int main(int argc, char *argv[])
 
   /* Start the threads */
   for (int64_t i = 0; i < n; ++i) {
-    args[i].lock = &mcs_lock;
+    args[i].lock = &clh_lock;
     args[i].tid = i;
 
     pthread_create(&threads[i], NULL, (void* (*)(void*))adder_listlock, &args[i]);
