@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "linked_set.h"
+#include "lock/clhlock.h"
 
 using namespace std;
 
@@ -10,6 +11,8 @@ static int64_t n          = 0;
 static int64_t loop_count = 0;
 
 static Set<int64_t> set;
+
+static CLHLock lock;
 
 struct counter {
   int64_t add_succ_cnt;
@@ -20,7 +23,7 @@ struct counter {
 
   void print()
   {
-    printf("%ld\t%ld\t%ld\n", add_succ_cnt, add_fail_cnt, remove_cnt);
+    printf("%20ld\t%20ld\t%20ld\n", add_succ_cnt, add_fail_cnt, remove_cnt);
   }
 
   counter &operator += (const counter &o)
@@ -42,6 +45,8 @@ void worker(const int &pid)
     int64_t add_key = i * (pid + 1);
     int64_t remove_key = i * (n - pid);
 
+    ListLockGuard guard(lock);
+
     // add
     if ((ret = set.add(add_key)) >= 0) {
       cnt.add_succ_cnt += add_key;
@@ -62,13 +67,13 @@ void validate()
 {
   struct counter total_cnt;
 
-  printf("add succ\tadd fail\tremove\n");
+  printf("            add succ\t            add fail\t              remove\n");
   for (int64_t i = 0; i < n; ++i) {
     counters[i].print();
     total_cnt += counters[i];
   }
   printf("==============\n");
-  printf("total count:");
+  printf("total count\n");
   total_cnt.print();
 
   int64_t set_cnt = 0;
@@ -78,7 +83,7 @@ void validate()
   }
 
   if (total_cnt.add_succ_cnt != total_cnt.remove_cnt + set_cnt) {
-    printf("corrupted set, set_cnt: %ld\n", set_cnt);
+    printf("corrupted set, set_cnt: %ld total: %ld\n", set_cnt, set_cnt + total_cnt.remove_cnt);
   } else {
     printf("works fine!\n");
   }
