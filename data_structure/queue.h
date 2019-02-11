@@ -33,8 +33,8 @@ private:
     qnode *next;
   };
 
-  qnode * head_ CACHE_ALIGNED;
-  qnode * tail_ CACHE_ALIGNED;
+  qnode *head_ CACHE_ALIGNED;
+  qnode *tail_ CACHE_ALIGNED;
   HazardManager hazard_mgr_;
 };
 
