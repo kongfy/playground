@@ -10,9 +10,9 @@ template <typename T>
 class LinkedList
 {
 public:
-  LinkedList() : head_(NULL), tail_(NULL)
+  LinkedList() : head_(NULL)
   {
-    head_ = tail_ = new qnode();
+    head_ = new qnode();
     head_->next = NULL;
   }
 
@@ -53,8 +53,6 @@ private:
   void search(const T key, qnode *&prev, qnode*&curr);
 
   qnode *head_ CACHE_ALIGNED;
-  qnode *tail_ CACHE_ALIGNED;
-
 public:
   class Iterator {
     friend LinkedList<T>;
@@ -134,16 +132,24 @@ int LinkedList<T>::remove(const T key)
 template <typename T>
 bool LinkedList<T>::find(const T key)
 {
-  qnode *prev = NULL;
-  qnode *curr = NULL;
+  qnode *curr = head_;
 
-  search(key, prev, curr);
+  do {
+    curr = unmark(curr->next);
+  } while (curr && curr->data < key);
 
-  if (curr && curr->data == key) {
-    return true;
-  } else {
-    return false;
-  }
+  return (curr && key == curr->data);
+
+  // qnode *prev = NULL;
+  // qnode *curr = NULL;
+
+  // search(key, prev, curr);
+
+  // if (curr && curr->data == key) {
+  //   return true;
+  // } else {
+  //   return false;
+  // }
 }
 
 template <typename T>
