@@ -45,7 +45,7 @@ void worker(const int &pid)
     int64_t add_key = i * (pid + 1);
     int64_t remove_key = i * (n - pid);
 
-    ListLockGuard guard(lock);
+    // ListLockGuard guard(lock);
 
     // add
     if ((ret = set.add(add_key)) >= 0) {
@@ -78,7 +78,15 @@ void validate()
 
   int64_t set_cnt = 0;
   Set<int64_t>::Iterator it;
+  int64_t last = 0;
   for (it = set.begin(); it != set.end(); ++it) {
+    int64_t tmp = *it;
+    if (tmp <= last) {
+      printf("corrupted set: ... %ld %ld ...\n", last, tmp);
+      return;
+    } else {
+      last = tmp;
+    }
     set_cnt += *it;
   }
 

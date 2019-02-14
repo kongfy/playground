@@ -35,7 +35,22 @@ private:
     qnode *next;
   };
 
-  void search(const T key, qnode *&prev, qnode*&next);
+  static qnode *mark(qnode *p)
+  {
+    return (qnode*) ((uint64_t) p | 1L);
+  }
+
+  static qnode *unmark(qnode *p)
+  {
+    return (qnode*) ((uint64_t) p & ~1L);
+  }
+
+  static bool is_marked(qnode *p)
+  {
+    return (uint64_t) p & 1L;
+  }
+
+  void search(const T key, qnode *&prev, qnode*&curr);
 
   qnode *head_ CACHE_ALIGNED;
   qnode *tail_ CACHE_ALIGNED;
@@ -44,7 +59,15 @@ public:
   class Iterator {
     friend LinkedList<T>;
   public:
-    Iterator &operator ++() { if (curr_ != NULL) curr_ = curr_->next; return *this; }
+    Iterator &operator ++()
+    {
+      if (curr_ != NULL) {
+        do {
+          curr_ = unmark(curr_->next);
+        } while (curr_ && is_marked(curr_->next));
+      }
+      return *this;
+    }
     bool operator != (const Iterator &o) const { return curr_ != o.curr_; }
     T &operator * () { if (curr_ != NULL) return curr_->data; }
   private:
@@ -59,17 +82,22 @@ template <typename T>
 int LinkedList<T>::insert(const T key)
 {
   qnode *prev = NULL;
-  qnode *next = NULL;
-
-  search(key, prev, next);
-
-  if (next && next->data == key) {
-    return LIST_ENTRY_DUPLICATE;
-  }
-
+  qnode *curr = NULL;
   qnode *tmp = new qnode(key);
-  tmp->next = next;
-  prev->next = tmp;
+
+  while (true) {
+    search(key, prev, curr);
+
+    if (curr && curr->data == key) {
+      free(tmp);
+      return LIST_ENTRY_DUPLICATE;
+    }
+
+    tmp->next = curr;
+    if (__sync_bool_compare_and_swap(&prev->next, curr, tmp)) {
+      break;
+    }
+  }
 
   return 0;
 }
@@ -78,15 +106,26 @@ template <typename T>
 int LinkedList<T>::remove(const T key)
 {
   qnode *prev = NULL;
+  qnode *curr = NULL;
   qnode *next = NULL;
 
-  search(key, prev, next);
+  while (true) {
+    search(key, prev, curr);
 
-  if (next && next->data == key) {
-    prev->next = next->next;
+    if (curr && curr->data == key) {
+      next = curr->next;
+      if (!is_marked(next)) {
+        if (__sync_bool_compare_and_swap(&curr->next, next, mark(next))) {
+          break;
+        }
+      }
+    } else {
+      return LIST_ENTRY_NOT_EXSIT;
+    }
+  }
+
+  if (__sync_bool_compare_and_swap(&prev->next, curr, next)) {
     // TODO: free qnode
-  } else {
-    return LIST_ENTRY_NOT_EXSIT;
   }
 
   return 0;
@@ -96,11 +135,11 @@ template <typename T>
 bool LinkedList<T>::find(const T key)
 {
   qnode *prev = NULL;
-  qnode *next = NULL;
+  qnode *curr = NULL;
 
-  search(key, prev, next);
+  search(key, prev, curr);
 
-  if (next && next->data == key) {
+  if (curr && curr->data == key) {
     return true;
   } else {
     return false;
@@ -108,15 +147,76 @@ bool LinkedList<T>::find(const T key)
 }
 
 template <typename T>
-void LinkedList<T>::search(const T key, qnode *&prev, qnode*&next)
+void LinkedList<T>::search(const T key, qnode *&prev, qnode*&curr)
 {
-  prev = head_;
-  next = prev->next;
+  qnode *t = NULL;
+  bool retry = false;
 
-  while (next && next->data < key) {
-    prev = next;
-    next = prev->next;
-  }
+  do {
+    retry = false;
+
+    prev = head_;
+    curr = unmark(prev->next);
+
+    while (curr) {
+      t = curr->next;
+
+      while (curr && is_marked(t)) {
+        if (__sync_bool_compare_and_swap(&prev->next, curr, unmark(t))) {
+          // TODO: free qnode
+          curr = unmark(t);
+          if (curr) t = curr->next;
+        } else {
+          retry = true;
+          break;
+        }
+      }
+
+      if (retry) break;
+
+      if (!curr || curr->data >= key) {
+        return;
+      } else {
+        prev = curr;
+        curr = unmark(prev->next);
+      }
+    }
+  } while (retry);
+
+  // while (true) {
+  //   qnode *t = head_;
+  //   qnode *t_next = NULL;
+  //   qnode *prev_next = NULL;
+
+  //   do {
+  //     t_next = t->next;
+  //     if (!is_marked(t_next)) {
+  //       prev = t;
+  //       prev_next = t_next;
+  //     }
+  //     t = unmark(t_next);
+  //   } while (t && (is_marked(t->next) || t->data < key));
+
+  //   curr = t;
+
+  //   if (prev_next == curr) {
+  //     if (curr && is_marked(curr->next)) {
+  //       continue;
+  //     } else {
+  //       return;
+  //     }
+  //   }
+
+  //   if (__sync_bool_compare_and_swap(&prev->next, prev_next, curr)) {
+  //     if (curr && is_marked(curr->next)) {
+  //       continue;
+  //     } else {
+  //       return;
+  //     }
+  //   }
+  // }
+
+  return;
 }
 
 template <typename T>
