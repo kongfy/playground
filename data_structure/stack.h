@@ -13,7 +13,7 @@ public:
   {
   }
 
-  virtual ~Stack()
+  ~Stack()
   {
     T tmp;
     while (pop(tmp)) {}

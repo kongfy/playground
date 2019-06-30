@@ -51,11 +51,14 @@ public:
         }
       }
     }
+
+    return 0;
   }
 
   int unlock(const int64_t tid)
   {
     number_[tid].v = 0;
+    return 0;
   }
 
 private:

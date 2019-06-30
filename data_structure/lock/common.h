@@ -2,6 +2,7 @@
 #define _COMMON_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #define CACHE_ALIGN_SIZE 64
 #define CACHE_ALIGNED __attribute__((aligned(CACHE_ALIGN_SIZE)))

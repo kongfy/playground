@@ -13,7 +13,7 @@ template <typename T>
 class Set
 {
 public:
-  int add(const T key)
+  int add(const T &key)
   {
     int list_ret = list_.insert(key);
 
@@ -26,7 +26,7 @@ public:
     }
   }
 
-  int remove(const T key)
+  int remove(const T &key)
   {
     int list_ret = list_.remove(key);
 
@@ -39,7 +39,7 @@ public:
     }
   }
 
-  bool contains(const T key)
+  bool contains(const T &key)
   {
     return list_.find(key);
   }

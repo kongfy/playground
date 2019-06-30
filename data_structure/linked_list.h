@@ -5,6 +5,7 @@
 
 static const int LIST_ENTRY_DUPLICATE = -1;
 static const int LIST_ENTRY_NOT_EXSIT = -2;
+static const int LIST_NOT_INIT        = -3;
 
 template <typename T>
 class LinkedList
@@ -16,14 +17,47 @@ public:
     head_->next = NULL;
   }
 
+  // insert node if not already present
+  // returns new list starting with sentinel (shares with parent)
+  // eg: split orderd hashmap
+  static LinkedList<T> *shortcut(LinkedList<T> &parent, const T &key)
+  {
+    LinkedList<T> *new_list = NULL;
+    int list_ret = parent.insert(key);
+
+    if (0 == list_ret || LIST_ENTRY_DUPLICATE == list_ret) {
+      qnode *prev = NULL;
+      qnode *curr = NULL;
+
+      parent.search(key, prev, curr);
+
+      if (curr && curr->data == key) {
+        new_list = new LinkedList<T>();
+        new_list->destory();
+        new_list->head_ = curr;
+      } else {
+        abort();
+      }
+    }
+
+    return new_list;
+  }
+
   virtual ~LinkedList()
   {
+
+  }
+
+  void destory()
+  {
+    delete head_;
+    head_ = NULL;
     // TODO: recycle memory safely
   }
 
-  int insert(const T key);
-  int remove(const T key);
-  bool find(const T key);
+  int insert(const T &key);
+  int remove(const T &key);
+  bool find(const T &key);
 
 private:
   class qnode
@@ -50,13 +84,14 @@ private:
     return (uint64_t) p & 1L;
   }
 
-  void search(const T key, qnode *&prev, qnode*&curr);
+  void search(const T &key, qnode *&prev, qnode*&curr);
 
   qnode *head_ CACHE_ALIGNED;
 public:
   class Iterator {
     friend LinkedList<T>;
   public:
+    Iterator() : curr_(NULL) {}
     Iterator &operator ++()
     {
       if (curr_ != NULL) {
@@ -67,7 +102,7 @@ public:
       return *this;
     }
     bool operator != (const Iterator &o) const { return curr_ != o.curr_; }
-    T &operator * () { if (curr_ != NULL) return curr_->data; }
+    T &operator * () { if (curr_ != NULL) { return curr_->data; } else { abort(); } }
   private:
     qnode *curr_;
   };
@@ -77,7 +112,7 @@ public:
 };
 
 template <typename T>
-int LinkedList<T>::insert(const T key)
+int LinkedList<T>::insert(const T &key)
 {
   qnode *prev = NULL;
   qnode *curr = NULL;
@@ -101,7 +136,7 @@ int LinkedList<T>::insert(const T key)
 }
 
 template <typename T>
-int LinkedList<T>::remove(const T key)
+int LinkedList<T>::remove(const T &key)
 {
   qnode *prev = NULL;
   qnode *curr = NULL;
@@ -130,7 +165,7 @@ int LinkedList<T>::remove(const T key)
 }
 
 template <typename T>
-bool LinkedList<T>::find(const T key)
+bool LinkedList<T>::find(const T &key)
 {
   qnode *curr = head_;
 
@@ -153,7 +188,7 @@ bool LinkedList<T>::find(const T key)
 }
 
 template <typename T>
-void LinkedList<T>::search(const T key, qnode *&prev, qnode*&curr)
+void LinkedList<T>::search(const T &key, qnode *&prev, qnode*&curr)
 {
   qnode *t = NULL;
   bool retry = false;
@@ -237,7 +272,6 @@ template <typename T>
 typename LinkedList<T>::Iterator LinkedList<T>::end()
 {
   Iterator iter;
-  iter.curr_ = NULL;
   return iter;
 }
 

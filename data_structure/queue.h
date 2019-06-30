@@ -14,7 +14,7 @@ public:
     head_->next = NULL;
   }
 
-  virtual ~Queue()
+  ~Queue()
   {
     T tmp;
     while (dequeue(tmp)) {
