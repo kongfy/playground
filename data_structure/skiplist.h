@@ -162,16 +162,13 @@ int OrderedSet<T>::add(const T &key)
       if (!__sync_bool_compare_and_swap(&prev->next_[i], curr, new_node)) {
         find(key, prevs, currs);
 
-        // change new_node's next_[i..top_level], except mark
+        // change new_node's next_[i..top_level]
         for (int64_t j = i; j <= top_level; ++j) {
           list_node *next = new_node->next_[j];
-          list_node *t = NULL;
-          while (next != (t =
-                   __sync_val_compare_and_swap(&new_node->next_[j],
-                                               next,
-                                               is_marked(next) ? mark(currs[j]) : currs[j]))) {
-            next = t;
-            // TODO: break for loop if node has been marked
+          if (is_marked(next)
+              || !__sync_bool_compare_and_swap(&new_node->next_[j], next, currs[j])) {
+            // new_node has been removed
+            return 0;
           }
         }
       } else {
