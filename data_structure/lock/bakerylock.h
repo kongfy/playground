@@ -7,8 +7,8 @@ class BakeryLock
 {
 public:
   BakeryLock() {
-    memset(&entering_, 0, sizeof(entering_));
-    memset(&number_, 0, sizeof(number_));
+    memset(entering_, 0, sizeof(entering_));
+    memset(number_, 0, sizeof(number_));
   };
   ~BakeryLock() {};
 

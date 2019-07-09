@@ -4,11 +4,8 @@
 #include <string.h>
 #include <functional>
 
+#include "set.h"
 #include "linked_list.h"
-
-static const int HASHSET_ENTRY_DUPLICATE = -1;
-static const int HASHSET_ENTRY_NOT_EXIST = -2;
-static const int HASHSET_ERROR_UNKNOWN   = -3;
 
 template <typename T, typename Hash = std::hash<T> >
 class HashSet
@@ -107,9 +104,9 @@ public:
         }
       }
     } else if (LIST_ENTRY_DUPLICATE == list_ret) {
-      return HASHSET_ENTRY_DUPLICATE;
+      return SET_ENTRY_DUPLICATE;
     } else {
-      return HASHSET_ERROR_UNKNOWN;
+      return SET_ERROR_UNKNOWN;
     }
 
     return 0;

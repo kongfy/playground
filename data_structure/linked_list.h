@@ -95,9 +95,11 @@ public:
     Iterator &operator ++()
     {
       if (curr_ != NULL) {
+        qnode *next = curr_->next;
         do {
-          curr_ = unmark(curr_->next);
-        } while (curr_ && is_marked(curr_->next));
+          curr_ = unmark(next);
+          next = curr_->next;
+        } while (curr_ && is_marked(next));
       }
       return *this;
     }
@@ -167,24 +169,14 @@ int LinkedList<T>::remove(const T &key)
 template <typename T>
 bool LinkedList<T>::find(const T &key)
 {
+  // wait-free
   qnode *curr = head_;
 
   do {
     curr = unmark(curr->next);
   } while (curr && curr->data < key);
 
-  return (curr && key == curr->data);
-
-  // qnode *prev = NULL;
-  // qnode *curr = NULL;
-
-  // search(key, prev, curr);
-
-  // if (curr && curr->data == key) {
-  //   return true;
-  // } else {
-  //   return false;
-  // }
+  return (curr && key == curr->data && !is_marked(curr->next));
 }
 
 template <typename T>
@@ -223,39 +215,6 @@ void LinkedList<T>::search(const T &key, qnode *&prev, qnode*&curr)
       }
     }
   } while (retry);
-
-  // while (true) {
-  //   qnode *t = head_;
-  //   qnode *t_next = NULL;
-  //   qnode *prev_next = NULL;
-
-  //   do {
-  //     t_next = t->next;
-  //     if (!is_marked(t_next)) {
-  //       prev = t;
-  //       prev_next = t_next;
-  //     }
-  //     t = unmark(t_next);
-  //   } while (t && (is_marked(t->next) || t->data < key));
-
-  //   curr = t;
-
-  //   if (prev_next == curr) {
-  //     if (curr && is_marked(curr->next)) {
-  //       continue;
-  //     } else {
-  //       return;
-  //     }
-  //   }
-
-  //   if (__sync_bool_compare_and_swap(&prev->next, prev_next, curr)) {
-  //     if (curr && is_marked(curr->next)) {
-  //       continue;
-  //     } else {
-  //       return;
-  //     }
-  //   }
-  // }
 
   return;
 }

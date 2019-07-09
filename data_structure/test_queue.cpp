@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   n          = min(atol(argv[1]), MAX_THREAD_NUM);
   loop_count = atol(argv[2]); /* Don't bother with format checking */
 
-  memset(&counters, 0, sizeof(counters));
+  memset(counters, 0, sizeof(counters));
 
   /* Start the threads */
   for (int64_t i = 0; i < n; ++i) {

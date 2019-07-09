@@ -79,7 +79,7 @@ void validate()
 
   int64_t set_cnt = 0;
   Set<int64_t>::Iterator it;
-  int64_t last = 0;
+  int64_t last = -1;
   for (it = set.begin(); it != set.end(); ++it) {
     int64_t tmp = *it;
     if (tmp <= last) {

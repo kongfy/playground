@@ -43,7 +43,7 @@ void worker(const int &pid)
     // add
     if ((ret = set.add(add_key)) >= 0) {
       cnt.add_succ_cnt += add_key;
-    } else if (HASHSET_ENTRY_DUPLICATE == ret) {
+    } else if (SET_ENTRY_DUPLICATE == ret) {
       cnt.add_fail_cnt += add_key;
     } else {
       printf("ERROR: unknown error code %d", ret);

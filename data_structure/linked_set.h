@@ -1,13 +1,8 @@
 #ifndef _LINKED_SET_H_
 #define _LINKED_SET_H_
 
+#include "set.h"
 #include "linked_list.h"
-
-// 直接封装了LinkedList，抽象出LinkedList希望能够提供更多功能
-
-static const int SET_ENTRY_DUPLICATE = -1;
-static const int SET_ENTRY_NOT_EXIST = -2;
-static const int SET_ERROR_UNKNOWN   = -3;
 
 template <typename T>
 class Set
