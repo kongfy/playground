@@ -85,12 +85,19 @@ private:
   static unsigned char random_height()
   {
     unsigned char height = 0;
+    int cnt = 0;
 
-    for (int64_t i = 1; i <= MAX_LEVEL; ++i) {
-      if (rand() & 1L) {
-        height++;
-      } else {
-        break;
+    while (cnt < MAX_LEVEL) {
+      int t = rand(); // [0, 32767]
+
+      for (int64_t i = 0; i < 15; ++i) {
+        if (t & 1L) {
+          height++;
+          t >>= 1L;
+        } else {
+          return height;
+        }
+        ++cnt;
       }
     }
 
