@@ -33,6 +33,11 @@ private:
     qnode *next;
   };
 
+  static void free_node(const void *node)
+  {
+    delete (const qnode*)node;
+  }
+
   qnode *head_ CACHE_ALIGNED;
   qnode *tail_ CACHE_ALIGNED;
   HazardManager hazard_mgr_;
@@ -98,7 +103,7 @@ bool Queue<T>::dequeue(T &data)
 
   /* h->next = (qnode *)1; // bad address, It's a trap! */
   /* delete h; */
-  hazard_mgr_.retireNode(h);
+  hazard_mgr_.retireNode(h, &free_node);
   return true;
 }
 

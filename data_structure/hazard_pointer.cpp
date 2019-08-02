@@ -62,12 +62,14 @@ void HazardManager::release(const void* const node, const int64_t tid)
   }
 }
 
-void HazardManager::retireNode(const void* const node)
+void HazardManager::retireNode(const void* const node, retire_cb cb)
 {
-  retireNode(node, get_itid());
+  retireNode(node, get_itid(), cb);
 }
 
-void HazardManager::retireNode(const void* const node, const int64_t &tid)
+void HazardManager::retireNode(const void* const node,
+                               const int64_t &tid,
+                               retire_cb cb)
 {
   if (tid < 0 || tid >= MAX_THREAD_NUM) {
     return;
@@ -77,6 +79,7 @@ void HazardManager::retireNode(const void* const node, const int64_t &tid)
   rnode *new_node = new rnode();
   new_node->node = node;
   new_node->next = data.rlist->next;
+  new_node->cb = cb;
   data.rlist->next = new_node;
   data.rcount++;
 
@@ -107,7 +110,7 @@ void HazardManager::scan(threadlocal &rdata)
       q = q->next;
       p->next = q;
       rdata.rcount--;
-      delete t->node; // bad design...
+      (*t->cb)(t->node);
       delete t;
     } else {
       p = q;

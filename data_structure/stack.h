@@ -29,6 +29,11 @@ private:
     qnode *next;
   };
 
+  static void free_node(const void *node)
+  {
+    delete (const qnode*)node;
+  }
+
   qnode *top_ CACHE_ALIGNED;
   HazardManager hazard_mgr_;
 };
@@ -64,7 +69,7 @@ bool Stack<T>::pop(T &data)
 
     if (__sync_bool_compare_and_swap(&top_, t, t->next)) {
       data = t->data;
-      hazard_mgr_.retireNode(t);
+      hazard_mgr_.retireNode(t, &free_node);
       return true;
     }
 

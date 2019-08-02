@@ -12,7 +12,8 @@ public:
   HazardManager(int k);
   virtual ~HazardManager();
 
-  void retireNode(const void* const node);
+  typedef void (*retire_cb)(const void* const node);
+  void retireNode(const void* const node, retire_cb cb);
 
   HazardManager(const HazardManager&) = delete;
   HazardManager &operator=(const HazardManager&) = delete;
@@ -20,9 +21,10 @@ private:
   struct rnode
   {
     const void *node;
+    retire_cb cb;
     rnode *next;
 
-    rnode() : node(NULL), next(NULL) {}
+    rnode() : node(NULL), cb(NULL), next(NULL) {}
   };
   struct threadlocal
   {
@@ -42,7 +44,7 @@ private:
     }
   } CACHE_ALIGNED;
 
-  void retireNode(const void* const node, const int64_t &tid);
+  void retireNode(const void* const node, const int64_t &tid, retire_cb cb);
   void scan(threadlocal &data);
   bool acquire(const void* const node, const int64_t &tid);
   void release(const void* const node, const int64_t tid);
