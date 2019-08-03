@@ -19,8 +19,8 @@ test_set : test_set.o
 test_hash : test_hash.o
 	$(CC) test_hash.o $(LIB) -o test_hash
 
-test_skiplist : test_skiplist.o
-	$(CC) test_skiplist.o $(LIB) -o test_skiplist
+test_skiplist : test_skiplist.o rcu_counter.o
+	$(CC) test_skiplist.o rcu_counter.o $(LIB) -o test_skiplist
 
 clean :
 	rm -f *.o test_queue test_stack test_set test_hash test_skiplist

@@ -5,7 +5,7 @@
 
 #include "set.h"
 #include "linked_list.h"
-#include "rcu_counter.h"
+#include "rcu.h"
 
 template <typename T>
 class OrderedSet
@@ -34,7 +34,7 @@ private:
   };
 
 public:
-  OrderedSet() : head_(), tail_(), rcu_()
+  OrderedSet() : head_(), tail_()
   {
     for (int64_t i = 0; i <= MAX_LEVEL; ++i) {
       head_.next_[i] = &tail_;
@@ -66,6 +66,7 @@ public:
     T &operator * () { if (curr_ && curr_->next_[0]) { return curr_->key_; } else { abort(); } }
   private:
     list_node *curr_;
+    RCUReadGuard guard_;
   };
 
   Iterator begin()
@@ -124,7 +125,6 @@ private:
 
   list_node head_;
   list_node tail_;
-  RCUCounter rcu_;
 };
 
 
@@ -136,7 +136,7 @@ int OrderedSet<T>::add(const T &key)
   const unsigned char top_level = random_height();
   list_node *new_node = new list_node(key, top_level);
 
-  RCUReadGuard guard(rcu_);
+  RCUReadGuard guard();
 
   // add bottom level
   while (true) {
@@ -190,7 +190,7 @@ int OrderedSet<T>::remove(const T &key)
   list_node *prevs[MAX_LEVEL + 1];
   list_node *currs[MAX_LEVEL + 1];
 
-  RCUReadGuard guard(rcu_);
+  RCUReadGuard guard();
 
   if (!find(key, prevs, currs)) {
     return SET_ENTRY_NOT_EXIST;
@@ -215,10 +215,10 @@ int OrderedSet<T>::remove(const T &key)
       } else if (next == (t = __sync_val_compare_and_swap(&node->next_[0], next, mark(next)))) {
         find(key, prevs, currs);
 
-        rcu_.rcu_read_unlock();
-        rcu_.synchronize_rcu();
+        rcu_read_unlock();
+        synchronize_rcu();
         delete node;
-        rcu_.rcu_read_lock();
+        rcu_read_lock();
 
         break;
       } else {
@@ -238,7 +238,7 @@ bool OrderedSet<T>::contains(const T &key)
   list_node *curr = NULL;
   list_node *next = NULL;
 
-  RCUReadGuard guard(rcu_);
+  RCUReadGuard guard();
 
   for (int64_t i = MAX_LEVEL; i >= 0; --i) {
     curr = unmark(prev->next_[i]);
